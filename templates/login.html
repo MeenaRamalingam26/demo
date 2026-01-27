@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WICA</title>
+  <style>
+    :root { --primary-blue:#002d72; --accent-gold:#ffb81c; --text-color:#333; --background-light:#f9f9f9; }
+    body { margin:0; font-family:"Segoe UI", Arial, sans-serif; background:var(--background-light); height:100vh; display:flex; justify-content:center; align-items:center; }
+    .left-side { position:absolute; left:0; top:0; bottom:0; width:40%; display:flex; justify-content:center; align-items:center; background:var(--primary-blue); }
+    .left-side img { width:80%; height:auto; object-fit:contain; }
+    .container { position:relative; z-index:2; width:350px; background:#fff; padding:2rem; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,0.2); text-align:center; right:-250px; border-top:6px solid var(--primary-blue); }
+    h1 { color:var(--primary-blue); margin-bottom:1.5rem; font-size:1.8rem; font-weight:600; }
+    input[type="text"], input[type="password"] { width:90%; padding:.75rem; margin:.5rem 0; border:1px solid #ccc; border-radius:6px; font-size:1rem; }
+    input:focus { border-color:var(--primary-blue); outline:none; box-shadow:0 0 5px rgba(0,45,114,0.3); }
+    button { width:100%; padding:.75rem; background:var(--accent-gold); color:var(--primary-blue); font-weight:bold; border:none; border-radius:6px; font-size:1rem; cursor:pointer; transition:.3s; }
+    button:hover { background:#e6a700; }
+    .error { margin-top:10px; font-size:14px; color:red; }
+  </style>
+</head>
+<body>
+  <!-- Left Image Section -->
+  <div class="left-side">
+    <img src="{{ url_for('static', filename='images/login.png') }}" alt="AI Illustration" />
+  </div>
+
+  <!-- Right Login Box -->
+  <div class="container">
+    <h1>WICA</h1>
+
+    <!-- ✅ Traditional form POST -->
+    <form id="loginForm" action="{{ url_for('login') }}" method="post">
+      <input type="text" id="username" name="username" placeholder="Username" required />
+      <input type="password" id="password" name="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+
+    <!-- Flask error (if any) -->
+    {% if error %}
+      <p class="error">{{ error }}</p>
+    {% endif %}
+  </div>
+</body>
+</html>

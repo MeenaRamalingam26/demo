@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Excel Preview - {{ claim_id }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <style>
+    :root { --primary-blue:#002d72; --accent-gold:#ffb81c; --text-color:#333; --bg:#f9f9f9; }
+    body { font-family:'Segoe UI', Arial, sans-serif; margin:0; background:var(--bg); }
+    .navbar { background:var(--primary-blue); color:#fff; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; font-weight:600; }
+    .navbar a { color:#fff; text-decoration:none; }
+    .container { max-width:1200px; margin:24px auto; background:#fff; border-radius:12px; box-shadow:0 6px 16px rgba(0,0,0,0.08); padding:20px; }
+    .header { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+    h1 { margin:0; color:var(--primary-blue); font-size:22px; }
+    .actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .btn { padding:10px 14px; border:none; border-radius:6px; cursor:pointer; font-weight:600; text-decoration:none; display:inline-block; }
+    .btn-secondary { background:#1a73e8; color:#fff; } .btn-secondary:hover { background:#185abc; }
+    .btn-outline { background:#fff; color:var(--primary-blue); border:2px solid var(--primary-blue); }
+    .btn-outline:hover { background:#eef3ff; }
+    .error { color:#b00020; margin-top: 12px; white-space: pre-wrap; }
+    .diag { margin-top: 10px; font-size: 12px; color: #555; white-space: pre-wrap; }
+
+    /* Excel-like table styling */
+    .excel-table { border-collapse: collapse; width: 100%; }
+    .excel-table th, .excel-table td { border:1px solid #e0e0e0; padding:6px 8px; font-size:14px; color:var(--text-color); }
+    .excel-table thead th { background:#fafbff; font-weight:700; }
+    .preview-card { border:1px solid #e8e8e8; border-radius:8px; overflow:hidden; margin-top:18px; }
+    .preview-header { background:#f6f8ff; padding:10px 14px; color:#002d72; font-weight:700; }
+    .preview-body { padding:12px; overflow:auto; }
+
+    /* Tabs for multiple sheets */
+    .tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+    .tab-btn { padding:6px 10px; border:1px solid #d0d0d0; border-radius:6px; background:#fff; cursor:pointer; }
+    .tab-btn.active { background:#eaf2ff; border-color:#1a73e8; color:#1a73e8; }
+    .sheet-panel { display:none; }
+    .sheet-panel.active { display:block; }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <div>WICA</div>
+    <div><a href="{{ url_for('claims') }}">&larr; Back to Claims</a></div>
+  </div>
+
+  <div class="container">
+    <div class="header">
+      <h1>Excel Preview: {{ claim_id }}</h1>
+      <div class="actions">
+        <a class="btn btn-secondary" href="{{ url_for('excel_download') }}">Download Dummy Excel</a>
+        <a class="btn btn-outline" href="{{ url_for('claims') }}">Back</a>
+      </div>
+    </div>
+
+    {% if error %}
+      <p class="error">{{ error }}</p>
+      {% if diag %}
+        <div class="diag">{{ diag }}</div>
+      {% endif %}
+    {% endif %}
+
+    {% if sheets and sheets|length > 0 %}
+      <div class="preview-card">
+        <div class="preview-header">Preview</div>
+        <div class="preview-body">
+          {% if sheets|length > 1 %}
+            <div class="tabs">
+              {% for s in sheets %}
+                <button class="tab-btn{% if loop.first %} active{% endif %}" data-target="sheet-{{ loop.index0 }}">{{ s.name }}</button>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          {% for s in sheets %}
+            <div id="sheet-{{ loop.index0 }}" class="sheet-panel{% if loop.first %} active{% endif %}">
+              {{ s.table_html | safe }}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% else %}
+      <p>No sheet content to display.</p>
+    {% endif %}
+  </div>
+
+  {% if sheets and sheets|length > 1 %}
+  <script>
+    // Minimal tabs (no libraries)
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.sheet-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        const target = btn.getAttribute('data-target');
+        const panel = document.getElementById(target);
+        if (panel) panel.classList.add('active');
+      });
+    });
+  </script>
+  {% endif %}
+</body>
+</html>

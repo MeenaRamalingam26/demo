@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>WICA - Claims List</title>
+    <style>
+        :root {
+            --primary-blue: #002d72;
+            --accent-gold: #ffb81c;
+            --text-color: #333;
+            --background-light: #f9f9f9;
+        }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--background-light); margin: 0; }
+        .navbar { background-color: var(--primary-blue); color: #fff; display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; font-size: 18px; font-weight: bold; }
+        .navbar .logo { display: flex; align-items: center; gap: 10px; }
+        .navbar .logo img { height: 40px; }
+        .navbar .right { display: flex; align-items: center; gap: 15px; }
+        .navbar button { background-color: var(--accent-gold); color: var(--primary-blue); border: none; padding: 8px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .navbar button:hover { background-color: #e6a700; }
+        h1 { text-align: center; color: var(--primary-blue); margin: 20px 0; font-size: 28px; }
+        .table-container { display: flex; justify-content: center; align-items: center; margin-top: 20px; padding: 0 16px; }
+        table { width: 100%; max-width: 1200px; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        th { background-color: var(--primary-blue); color: #fff; padding: 12px; text-align: left; font-size: 16px; }
+        td { padding: 12px; border-bottom: 1px solid #ddd; font-size: 14px; color: var(--text-color); vertical-align: middle; }
+        tr:hover { background-color: #f1f1f1; }
+
+        /* Status badges */
+        .status { font-weight: 700; padding: 6px 10px; border-radius: 16px; display: inline-block; font-size: 12px; }
+        .status.pending { background-color: #e0e0e0; color: #333; }
+        .status.reviewed { background-color: var(--accent-gold); color: var(--primary-blue); }
+        .status.output-generated { background-color: #cce5ff; color: #004085; }
+        .status.in-progress { background-color: #ffe9cc; color: #8a5a00; } /* new: in-progress */
+
+        /* Buttons */
+        .btn { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; display: inline-block; font-weight: 600; font-size: 14px; }
+        .btn-primary { background: #1a73e8; color: #fff; } .btn-primary:hover { background: #185abc; }
+        .btn-secondary { background: #34a853; color: #fff; } .btn-secondary:hover { background: #2c8b47; }
+        .btn-disabled { background: #e0e0e0; color: #777; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='images/LOGO.png') }}" alt="Logo" />
+            <span>WICA</span>
+        </div>
+        <div class="right">
+            <button id="logoutBtn">Logout</button>
+        </div>
+    </div>
+
+    <h1>Claims List</h1>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>File Name</th>
+                    <th>Last Edited</th>
+                    <th>Review Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="claimsTable">
+                <tr data-claim-id="claim_1">
+                    <td>claim_1</td>
+                    <td>2025-11-28</td>
+                    <td><span class="status reviewed">Reviewed</span></td>
+                    <td></td>
+                </tr>
+                <tr data-claim-id="claim_2">
+                    <td>claim_2</td>
+                    <td>2025-11-30</td>
+                    <td><span class="status pending">Pending</span></td>
+                    <td></td>
+                </tr>
+                <tr data-claim-id="claim_3">
+                    <td>claim_3</td>
+                    <td>2025-12-01</td>
+                    <!-- use a consistent class lowercase with hyphen -->
+                    <td><span class="status in-progress">In-Progress</span></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', function () {
+            window.location.href = '{{ url_for("logout") }}';
+        });
+
+        /**
+         * Normalize any free-text status into a canonical token:
+         * - pending -> "pending"
+         * - reviewed -> "reviewed"
+         * - output generated / output_generated -> "output_generated"
+         * - in progress / in-progress / in_progress -> "in_progress"
+         */
+        function normalizeStatus(text) {
+            if (!text) return '';
+            const t = text.trim().toLowerCase();
+            if (t === 'reviewed') return 'reviewed';
+            if (t === 'pending') return 'pending';
+            if (t.replace(/\s+/g, '_') === 'output_generated') return 'output_generated';
+            if (t.replace(/[\s\-]+/g, '_') === 'in_progress') return 'in_progress'; // handles "in-progress", "in progress", "in_progress"
+            return t.replace(/\s+/g, '_'); // default fallback
+        }
+
+        // Ensure badge classes + display text are harmonized
+        (function harmonizeStatusBadges() {
+            document.querySelectorAll('#claimsTable .status').forEach(el => {
+                const token = normalizeStatus(el.textContent);
+                // Pretty display
+                const display = token.replace('_', ' ').replace(/\b\w/g, m => m.toUpperCase());
+                el.textContent = display;
+
+                // Reset classes then apply
+                el.classList.remove('pending', 'reviewed', 'output-generated', 'in-progress');
+                if (token === 'pending') el.classList.add('pending');
+                else if (token === 'reviewed') el.classList.add('reviewed');
+                else if (token === 'output_generated') el.classList.add('output-generated');
+                else if (token === 'in_progress') el.classList.add('in-progress');
+            });
+        })();
+
+        // Build Actions based on normalized status
+        function buildActions() {
+            const rows = document.querySelectorAll('#claimsTable tr');
+            rows.forEach(row => {
+                const actionsCell = row.cells[3];
+                const statusEl = row.querySelector('.status');
+                const claimId = row.getAttribute('data-claim-id') || row.cells[0].textContent.trim();
+                if (!actionsCell || !statusEl) return;
+                actionsCell.innerHTML = '';
+
+                const statusToken = normalizeStatus(statusEl.textContent);
+
+                if (statusToken === 'reviewed') {
+                    // Reviewed → Download/Preview Excel
+                    const a = document.createElement('a');
+                    a.className = 'btn btn-secondary';
+                    a.textContent = 'Download Excel';
+                    a.href = `/excel-preview/${encodeURIComponent(claimId)}`;
+                    actionsCell.appendChild(a);
+                } else if (statusToken === 'pending' || statusToken === 'in_progress') {
+                    // Pending or In-Progress → Review
+                    const a = document.createElement('a');
+                    a.className = 'btn btn-primary';
+                    a.textContent = 'Review';
+                    a.href = `/review/${encodeURIComponent(claimId)}`;
+                    actionsCell.appendChild(a);
+                } else {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-disabled';
+                    btn.textContent = 'Unavailable';
+                    btn.disabled = true;
+                    actionsCell.appendChild(btn);
+                }
+            });
+        }
+
+        buildActions();
+    </script>
+</body>
+</html>
