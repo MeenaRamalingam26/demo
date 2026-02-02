@@ -47,7 +47,7 @@
     <div class="header">
       <h1>Excel Preview: {{ claim_id }}</h1>
       <div class="actions">
-        <a class="btn btn-secondary" href="{{ url_for('excel_download') }}">Download Dummy Excel</a>
+        <a class="btn btn-secondary" href="{{ url_for('excel_download') }}">Download Dummy XLSM</a>
         <a class="btn btn-outline" href="{{ url_for('claims') }}">Back</a>
       </div>
     </div>
@@ -66,13 +66,15 @@
           {% if sheets|length > 1 %}
             <div class="tabs">
               {% for s in sheets %}
-                <button class="tab-btn{% if loop.first %} active{% endif %}" data-target="sheet-{{ loop.index0 }}">{{ s.name }}</button>
+                <button class="tab-btn{% if loop.first %} active{% endif %}"
+                        data-target="sheet-{{ loop.index0 }}">{{ s.name }}</button>
               {% endfor %}
             </div>
           {% endif %}
 
           {% for s in sheets %}
-            <div id="sheet-{{ loop.index0 }}" class="sheet-panel{% if loop.first %} active{% endif %}">
+            <div id="sheet-{{ loop.index0 }}"
+                 class="sheet-panel{% if loop.first %} active{% endif %}">
               {{ s.table_html | safe }}
             </div>
           {% endfor %}
