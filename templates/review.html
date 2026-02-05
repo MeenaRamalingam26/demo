@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <title>Review – Claim {{ claim_id }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- YOUR ORIGINAL STYLES (unchanged) -->
+  <!-- ORIGINAL STYLES (kept) -->
   <style>
     :root{
       --bg:#f8fafc; --panel:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280;
@@ -69,13 +69,11 @@
     a.link:hover{text-decoration:underline}
   </style>
 
-  <!-- ADDITIONS: navbar + button theme using your colors (appended, original untouched) -->
+  <!-- THEME AND NEW LAYOUT STYLES -->
   <style>
     :root{
-      /* Your theme colors */
       --primary-blue:#002d72;
       --accent-gold:#ffb81c;
-      /* Optional darker shade for hover */
       --primary-blue-600:#001e5a;
     }
 
@@ -105,262 +103,359 @@
     .btn.accent{
       background: var(--accent-gold);
       border-color: var(--accent-gold);
-      color: #111; /* better contrast on gold */
+      color: #111;
     }
     .btn.accent:hover{
       filter: brightness(0.95);
     }
+
+    /* ===== Review mode layout with single shared sidebar ===== */
+    .app-layout{
+      display: grid;
+      grid-template-columns: 1fr; /* default: single column (file list view) */
+      gap: 18px;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px 24px;
+    }
+    /* When reviewing a file, expand width and show sidebar column */
+    body.reviewing .app-layout{
+      grid-template-columns: 220px 1fr; /* sidebar + content */
+      max-width: 1400px;                /* wider canvas while reviewing */
+    }
+
+    /* Shared left sidebar component (hidden on list) */
+    #reviewSideNav{
+      display: none;
+      border-right: 1px solid var(--border);
+      padding: 16px 12px 16px 0;
+      position: sticky;
+      top: 16px;
+      align-self: start;
+      height: fit-content;
+      background: transparent;
+    }
+    body.reviewing #reviewSideNav{ display: block; }
+
+    #reviewSideNav h3{
+      margin: 0 0 10px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    #reviewSideNav .item{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:8px;
+      cursor:pointer;
+      color:var(--text);
+      font-weight:600;
+    }
+    #reviewSideNav .item:hover{ background:#f8fafc; }
+    #reviewSideNav .item.active{
+      background:#eef2ff;
+      color:var(--primary-blue);
+    }
+    #reviewSideNav .dot{ width:10px; height:10px; border-radius:50%; }
+    #reviewSideNav .dot.medical{ background:var(--medical); }
+    #reviewSideNav .dot.id{ background:var(--id); }
+    #reviewSideNav .dot.wage{ background:var(--wage); }
+
+    /* Bigger preview + wider content while reviewing */
+    body.reviewing main{ max-width: 1400px; }
+    body.reviewing .grid{
+      grid-template-columns: 1fr 1.35fr; /* more space to the preview column */
+    }
+    body.reviewing .preview{
+      min-height: 520px; /* increased viewing area */
+    }
+
+    /* Link-like button for navbar back */
+    .link-btn{
+      appearance:none;
+      background:none;
+      border:none;
+      color:#fff;
+      font-weight:700;
+      cursor:pointer;
+      padding:0;
+    }
+    .link-btn:hover{ text-decoration: underline; }
   </style>
 </head>
 <body>
 
-  <!-- NAVBAR (attached) -->
+  <!-- NAVBAR -->
   <div class="navbar">
     <div class="logo">
       <img src="{{ url_for('static', filename='images/LOGO.png') }}" alt="Logo" />
       <span>WICA</span>
     </div>
-    <div><a href="{{ url_for('claims') }}">← Back to Claims</a></div>
+    <div>
+      <!-- Visible only on file list -->
+      <a id="navBackClaims" href="{{ url_for('claims') }}">← Back to Claims</a>
+      <!-- Visible only while reviewing -->
+      <button id="navBackReview" class="link-btn" style="display:none;" onclick="backToReview()">← Back to Review</button>
+    </div>
   </div>
 
-  <header>
-    <h1>Review – Claim 2- AWS25-0091</h1>
-    <div class="sub">Select a file to review. Use Next/Previous to move between files.</div>
-    <!-- (Legend removed from header as requested) -->
-  </header>
-  
-  <main>
-    <!-- SECTION A: File List (hub) -->
-    <section id="file-list" class="section active">
-      <div class="card">
-        <div class="panel">
-
-          <!-- Color legend is NOW placed here (only on list page) -->
-          <div class="legend">
-            <span class="pill"><span class="dot medical"></span> Medical</span>
-            <span class="pill"><span class="dot id"></span> ID</span>
-            <span class="pill"><span class="dot wage"></span> Wage Report</span>
-          </div>
-
-          <ul class="file-list">
-            <li class="file-item">
-              <div class="file-meta">
-                <span class="badge medical">File 1</span>
-                <span><strong>Hasan_Medical_Report.pdf</strong></span>
-                <span class="muted">• Last modified: <span id="lm1">—</span></span>
-              </div>
-              <button class="btn primary" onclick="openFile(1)">Review</button>
-            </li>
-            <li class="file-item">
-              <div class="file-meta">
-                <span class="badge id">File 2</span>
-                <span><strong>Hasan_ID.pdf</strong></span>
-                <span class="muted">• Last modified: <span id="lm2">—</span></span>
-              </div>
-              <button class="btn primary" onclick="openFile(2)">Review</button>
-            </li>
-            <li class="file-item">
-              <div class="file-meta">
-                <span class="badge wage">File 3</span>
-                <span><strong>Wage_report_hasan.pdf</strong></span>
-                <span class="muted">• Last modified: <span id="lm3">—</span></span>
-              </div>
-              <button class="btn primary" onclick="openFile(3)">Review</button>
-            </li>
-          </ul>
-        </div>
-
-        <!-- global actions after reviewing -->
-        <div class="toolbar">
-          <button class="btn" onclick="saveAllAndBack()">Save and Go Back</button>
-          <!-- Use accent gold for Excel action -->
-          <button class="btn accent" onclick="saveAllAndExcel()">Generate Excel</button>
-        </div>
+  <!-- LAYOUT WRAPPER: sidebar (only in review) + content -->
+  <div class="app-layout">
+    <!-- SHARED SIDE NAV (component) -->
+    <aside id="reviewSideNav" aria-label="File navigation">
+      <h3>Files</h3>
+      <div class="item" data-target="file-1" onclick="openFile(1)">
+        <span class="dot medical"></span><span>Hasan_Medical_Report.pdf</span>
       </div>
-    </section>
-
-    <!-- SECTION B1: File 1 (Medical) -->
-    <section id="file-1" class="section">
-      <div class="card">
-        <div class="panel">
-          <!-- Navigator for file sections -->
-          <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-            <span style="font-weight:700; opacity:1;">Medical_record_files</span>
-            <span style="opacity:0.45;">→</span>
-            <span style="opacity:0.45;">ID_record_files</span>
-            <span style="opacity:0.45;">→</span>
-            <span style="opacity:0.45;">Wage_report_files</span>
-          </div>
-
-          <h2 style="margin-top:0">Hasan_Medical_Report.pdf</h2>
-          <div class="grid">
-            <div>
-              <div class="field">
-                <label for="patientName">Patient Name</label>
-                <input id="patientName" placeholder="HASAN MD MEHEDI">
-              </div>
-              <div class="field">
-                <label for="dob">Date of Birth</label>
-                <input id="dob" placeholder="1992-11-10">
-              </div>
-              <div class="field">
-                <label for="diagnosis">Diagnosis</label>
-                <textarea id="diagnosis" rows="3" placeholder="Falls"></textarea>
-              </div>
-            </div>
-            <div>
-              <!-- image placeholder -->
-              <!-- Replace the Medical preview box -->
-<div class="preview" style="padding:0;">
-  <object
-    data="{{ url_for('static', filename='docs/Hasan_Medical_Report.pdf') }}#toolbar=1&navpanes=0&scrollbar=1"
-    type="application/pdf"
-    width="100%"
-    height="100%"
-    style="min-height:260px; border:0;"
-  >
-    <!-- Fallback if the browser can't render PDFs -->
-    <iframe
-      src="{{ url_for('static', filename='docs/Hasan_Medical_Report.pdf') }}"
-      width="100%"
-      height="100%"
-      style="min-height:260px; border:0;"
-    ></iframe>
-  </object>
-</div>
-
-            </div>
-          </div>
-        </div>
-        <div class="toolbar">
-          <button class="btn" onclick="saveFile(1)">Save</button>
-          <button class="btn primary" onclick="goNext(1)">Next</button>
-        </div>
+      <div class="item" data-target="file-2" onclick="openFile(2)">
+        <span class="dot id"></span><span>Hasan_ID.pdf</span>
       </div>
-    </section>
-
-    <!-- SECTION B2: File 2 (ID) -->
-    <section id="file-2" class="section">
-      <div class="card">
-        <div class="panel">
-          <!-- Navigator for file sections -->
-          <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-            <span style="opacity:0.45;">Medical_record_files</span>
-            <span style="opacity:0.45;">→</span>
-            <span style="font-weight:700; opacity:1;">ID_record_files</span>
-            <span style="opacity:0.45;">→</span>
-            <span style="opacity:0.45;">Wage_report_files</span>
-          </div>
-
-          <h2 style="margin-top:0">Hasan_ID.pdf</h2>
-          <div class="grid">
-            <div>
-              <div class="field">
-                <label for="idType">ID Type</label>
-                <select id="idType">
-                  <option value="">Passport</option>
-                  <option>Passport</option>
-                  <option>Driver License</option>
-                  <option>National ID</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="idNumber">ID Number</label>
-                <input id="idNumber" placeholder="A11125405">
-              </div>
-              <div class="field">
-                <label for="idExpiry">Expiry Date</label>
-                <input id="idExpiry" placeholder="2033-07-02">
-              </div>
-            </div>
-            <div>
-              <!-- Replace the ID preview box -->
-<div class="preview" style="padding:0;">
-  <object
-    data="{{ url_for('static', filename='docs/Hasan_ID.pdf') }}#toolbar=1&navpanes=0&scrollbar=1"
-    type="application/pdf"
-    width="100%"
-    height="100%"
-    style="min-height:260px; border:0;"
-  >
-    <iframe
-      src="{{ url_for('static', filename='docs/Hasan_ID.pdf') }}"
-      width="100%"
-      height="100%"
-      style="min-height:260px; border:0;"
-    ></iframe>
-  </object>
-</div>
-            </div>
-          </div>
-        </div>
-        <div class="toolbar">
-          <button class="btn" onclick="goPrev(2)">← Previous </button>
-          <button class="btn" onclick="saveFile(2)">Save</button>
-          <button class="btn primary" onclick="goNext(2)">Next </button>
-        </div>
+      <div class="item" data-target="file-3" onclick="openFile(3)">
+        <span class="dot wage"></span><span>Wage_report_hasan.pdf</span>
       </div>
-    </section>
+    </aside>
 
-    <!-- SECTION B3: File 3 (Wage Report) -->
-    <section id="file-3" class="section">
-      <div class="card">
-        <div class="panel">
-          <!-- Navigator for file sections -->
-          <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-            <span style="opacity:0.45;">Medical_record_files</span>
-            <span style="opacity:0.45;">→</span>
-            <span style="opacity:0.45;">ID_record_files</span>
-            <span style="opacity:0.45;">→</span>
-            <span style="font-weight:700; opacity:1;">Wage_report_files</span>
+    <!-- CONTENT COLUMN -->
+    <div>
+      <header>
+        <h1>Review – Claim {{ claim_id }}</h1>
+        <div class="sub">Select a file to review. Use Next/Previous to move between files.</div>
+      </header>
+      
+      <main>
+        <!-- SECTION A: File List (hub) -->
+        <section id="file-list" class="section active">
+          <div class="card">
+            <div class="panel">
+
+              <!-- Color legend placed here (only on list page) -->
+              <div class="legend">
+                <span class="pill"><span class="dot medical"></span> Medical</span>
+                <span class="pill"><span class="dot id"></span> ID</span>
+                <span class="pill"><span class="dot wage"></span> Wage Report</span>
+              </div>
+
+              <ul class="file-list">
+                <li class="file-item">
+                  <div class="file-meta">
+                    <!-- category badge only -->
+                    <span class="badge medical"></span>
+                    <span><strong>Hasan_Medical_Report.pdf</strong></span>
+                    <span class="muted">• Last modified: <span id="lm3">2026-02-05 12:02</span></span>
+                  </div>
+                  <button class="btn primary" onclick="openFile(1)">Review</button>
+                </li>
+                <li class="file-item">
+                  <div class="file-meta">
+                    <span class="badge id"></span>
+                    <span><strong>Hasan_ID.pdf</strong></span>
+                    <span class="muted">• Last modified: <span id="lm3">2026-02-05 12:02</span></span>
+                  </div>
+                  <button class="btn primary" onclick="openFile(2)">Review</button>
+                </li>
+                <li class="file-item">
+                  <div class="file-meta">
+                    <span class="badge wage"></span>
+                    <span><strong>Wage_report_hasan.pdf</strong></span>
+                    <span class="muted">• Last modified: <span id="lm3">2026-02-05 12:02</span></span>
+                  </div>
+                  <button class="btn primary" onclick="openFile(3)">Review</button>
+                </li>
+              </ul>
+            </div>
+
+            <!-- global actions after reviewing -->
+            <div class="toolbar">
+              <button class="btn" onclick="saveAllAndBack()">Save and Go Back</button>
+              <button class="btn accent" onclick="saveAllAndExcel()">Generate Excel</button>
+            </div>
           </div>
+        </section>
 
-          <h2 style="margin-top:0">Wage_report_hasan.pdf</h2>
-          <div class="grid">
-            <div>
-              <div class="field">
-                <label for="employer">Employer</label>
-                <input id="employer" placeholder="TECHCOM CONSTRUCTION &amp; TRADING PTE LTD">
+        <!-- SECTION B1: File 1 (Medical) -->
+        <section id="file-1" class="section">
+          <div class="card">
+            <div class="panel">
+              <!-- Crumbs -->
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <span style="font-weight:700; opacity:1;">Medical_record_files</span>
+                <span style="opacity:0.45;">→</span>
+                <span style="opacity:0.45;">ID_record_files</span>
+                <span style="opacity:0.45;">→</span>
+                <span style="opacity:0.45;">Wage_report_files</span>
               </div>
-              <div class="field">
-                <label for="payPeriod">Pay Period</label>
-                <input id="payPeriod" placeholder="2024-02-01 to 2025-01-31">
-              </div>
-              <div class="field">
-                <label for="grossWages">Gross Wages</label>
-                <input id="grossWages" placeholder="$ 10218.00">
+
+              <h2 style="margin-top:0">Hasan_Medical_Report.pdf</h2>
+              <div class="grid">
+                <div>
+                  <div class="field">
+                    <label for="patientName">Patient Name</label>
+                    <input id="patientName" placeholder="HASAN MD MEHEDI">
+                  </div>
+                  <div class="field">
+                    <label for="dob">Date of Birth</label>
+                    <input id="dob" placeholder="1992-11-10">
+                  </div>
+                  <div class="field">
+                    <label for="diagnosis">Diagnosis</label>
+                    <textarea id="diagnosis" rows="3" placeholder="Falls"></textarea>
+                  </div>
+                </div>
+                <div>
+                  <!-- Preview -->
+                  <div class="preview" style="padding:0;">
+                    <object
+                      data="{{ url_for('static', filename='docs/Hasan_Medical_Report.pdf') }}#toolbar=1&navpanes=0&scrollbar=1"
+                      type="application/pdf"
+                      width="100%"
+                      height="100%"
+                      style="min-height:260px; border:0;"
+                    >
+                      <!-- Fallback if the browser can't render PDFs -->
+                      <iframe
+                        src="{{ url_for('static', filename='docs/Hasan_Medical_Report.pdf') }}"
+                        width="100%"
+                        height="100%"
+                        style="min-height:260px; border:0;"
+                      ></iframe>
+                    </object>
+                  </div>
+                </div>
               </div>
             </div>
-            <div>
-              <!-- Replace the Wage Report preview box -->
-<div class="preview" style="padding:0;">
-  <object
-    data="{{ url_for('static', filename='docs/Wage_report_hasan.pdf') }}#toolbar=1&navpanes=0&scrollbar=1"
-    type="application/pdf"
-    width="100%"
-    height="100%"
-    style="min-height:260px; border:0;"
-  >
-    <iframe
-      src="{{ url_for('static', filename='docs/Wage_report_hasan.pdf') }}"
-      width="100%"
-      height="100%"
-      style="min-height:260px; border:0;"
-    ></iframe>
-  </object>
-</div>
-
+            <div class="toolbar">
+              <span style="flex:1"></span>
+              <button class="btn" onclick="saveFile(1)">Save</button>
+              <button class="btn primary" onclick="goNext(1)">Next</button>
             </div>
           </div>
-        </div>
-        <div class="toolbar">
-          <button class="btn" onclick="goPrev(3)">← Previous </button>
-          <button class="btn" onclick="saveFileAndBack()">Save and Go Back</button>
-          <!-- No Next here per your spec -->
-        </div>
-      </div>
-    </section>
-  </main>
+        </section>
+
+        <!-- SECTION B2: File 2 (ID) -->
+        <section id="file-2" class="section">
+          <div class="card">
+            <div class="panel">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <span style="opacity:0.45;">Medical_record_files</span>
+                <span style="opacity:0.45;">→</span>
+                <span style="font-weight:700; opacity:1;">ID_record_files</span>
+                <span style="opacity:0.45;">→</span>
+                <span style="opacity:0.45;">Wage_report_files</span>
+              </div>
+
+              <h2 style="margin-top:0">Hasan_ID.pdf</h2>
+              <div class="grid">
+                <div>
+                  <div class="field">
+                    <label for="idType">ID Type</label>
+                    <select id="idType">
+                      <option>Passport</option>
+                      <option>Driver License</option>
+                      <option>National ID</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="idNumber">ID Number</label>
+                    <input id="idNumber" placeholder="A11125405">
+                  </div>
+                  <div class="field">
+                    <label for="idExpiry">Expiry Date</label>
+                    <input id="idExpiry" placeholder="2033-07-02">
+                  </div>
+                </div>
+                <div>
+                  <div class="preview" style="padding:0;">
+                    <object
+                      data="{{ url_for('static', filename='docs/Hasan_ID.pdf') }}#toolbar=1&navpanes=0&scrollbar=1"
+                      type="application/pdf"
+                      width="100%"
+                      height="100%"
+                      style="min-height:260px; border:0;"
+                    >
+                      <iframe
+                        src="{{ url_for('static', filename='docs/Hasan_ID.pdf') }}"
+                        width="100%"
+                        height="100%"
+                        style="min-height:260px; border:0;"
+                      ></iframe>
+                    </object>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span style="flex:1"></span>
+              <button class="btn" onclick="goPrev(2)">← Previous </button>
+              <button class="btn" onclick="saveFile(2)">Save</button>
+              <button class="btn primary" onclick="goNext(2)">Next </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION B3: File 3 (Wage Report) -->
+        <section id="file-3" class="section">
+          <div class="card">
+            <div class="panel">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <span style="opacity:0.45;">Medical_record_files</span>
+                <span style="opacity:0.45;">→</span>
+                <span style="opacity:0.45;">ID_record_files</span>
+                <span style="opacity:0.45;">→</span>
+                <span style="font-weight:700; opacity:1;">Wage_report_files</span>
+              </div>
+
+              <h2 style="margin-top:0">Wage_report_hasan.pdf</h2>
+              <div class="grid">
+                <div>
+                  <div class="field">
+                    <label for="employer">Employer</label>
+                    <input id="employer" placeholder="TECHCOM CONSTRUCTION &amp; TRADING PTE LTD">
+                  </div>
+                  <div class="field">
+                    <label for="payPeriod">Pay Period</label>
+                    <input id="payPeriod" placeholder="2024-02-01 to 2025-01-31">
+                  </div>
+                  <div class="field">
+                    <label for="grossWages">Gross Wages</label>
+                    <input id="grossWages" placeholder="$ 10218.00">
+                  </div>
+                </div>
+                <div>
+                  <div class="preview" style="padding:0;">
+                    <object
+                      data="{{ url_for('static', filename='docs/Wage_report_hasan.pdf') }}#toolbar=1&navpanes=0&scrollbar=1"
+                      type="application/pdf"
+                      width="100%"
+                      height="100%"
+                      style="min-height:260px; border:0;"
+                    >
+                      <iframe
+                        src="{{ url_for('static', filename='docs/Wage_report_hasan.pdf') }}"
+                        width="100%"
+                        height="100%"
+                        style="min-height:260px; border:0;"
+                      ></iframe>
+                    </object>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span style="flex:1"></span>
+              <button class="btn" onclick="goPrev(3)">← Previous </button>
+              <!-- Changed: Save and Go Back -->
+              <button class="btn primary" onclick="saveFileAndBack()">Save and Go Back</button>
+              <!-- No Next here -->
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
 
   <script>
     // ----- Minimal front-end state (no backend calls yet) -----
@@ -373,15 +468,43 @@
     }
     function setData(obj) { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
 
+    // UI toggles for reviewing/list states
+    function toggleUIForSection(id){
+      const onList = (id === 'file-list');
+
+      // Layout & sidebar
+      document.body.classList.toggle('reviewing', !onList);
+
+      // Navbar back links
+      const backClaims = document.getElementById('navBackClaims');
+      const backReview = document.getElementById('navBackReview');
+      if (backClaims) backClaims.style.display = onList ? '' : 'none';
+      if (backReview) backReview.style.display = onList ? 'none' : '';
+
+      // Sidebar active state
+      const map = {'file-1':1, 'file-2':2, 'file-3':3};
+      const n = map[id];
+      document.querySelectorAll('#reviewSideNav .item').forEach(el => el.classList.remove('active'));
+      if (n) {
+        const selector = `#reviewSideNav .item[data-target="file-${n}"]`;
+        document.querySelectorAll(selector).forEach(el => el.classList.add('active'));
+      }
+    }
+
     // Section switcher
     function showSection(id){
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-      window.scrollTo({top: 0, behavior: 'smooth'});
+      const target = document.getElementById(id);
+      if (target) {
+        target.classList.add('active');
+        window.scrollTo({top: 0, behavior: 'smooth'});
+        toggleUIForSection(id);
+      }
     }
     function openFile(n){ showSection(`file-${n}`); }
     function goNext(n){ openFile(n+1); }
     function goPrev(n){ openFile(n-1); }
+    function backToReview(){ showSection('file-list'); }
 
     // Save fields for each file + update "Last modified"
     function saveFile(n){
@@ -412,9 +535,17 @@
       if(lmId) document.getElementById(lmId).textContent = now;
       alert(`File ${n} saved`);
     }
+
+    // Save current active file and go back to the file list
     function saveFileAndBack() {
-      saveFile(3);                // Save current file
-      showSection("file-list");   // Go back to the main review (file list) section
+      if (document.getElementById('file-3')?.classList.contains('active')) {
+        saveFile(3);
+      } else if (document.getElementById('file-2')?.classList.contains('active')) {
+        saveFile(2);
+      } else if (document.getElementById('file-1')?.classList.contains('active')) {
+        saveFile(1);
+      }
+      showSection("file-list");
     }
 
     // Global actions from the file list
@@ -443,6 +574,9 @@
         payPeriod.value = data.files.file3.payPeriod || '';
         grossWages.value = data.files.file3.grossWages || '';
       }
+
+      // Land on the list by default
+      toggleUIForSection('file-list');
     })();
   </script>
 </body>

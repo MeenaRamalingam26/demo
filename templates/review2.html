@@ -1,0 +1,449 @@
+<!-- templates/review.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Review – Claim {{ claim_id }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- YOUR ORIGINAL STYLES (unchanged) -->
+  <style>
+    :root{
+      --bg:#f8fafc; --panel:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280;
+      --primary:#2563eb; --primary-600:#1d4ed8; --shadow:0 6px 20px rgba(0,0,0,0.06);
+      /* legend colors */
+      --medical:#16a34a;  /* green */
+      --id:#2563eb;       /* blue */
+      --wage:#f59e0b;     /* orange */
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    header{background:var(--panel);border-bottom:1px solid var(--border);padding:16px 24px}
+    main{padding:24px;max-width:1100px;margin:0 auto}
+    h1{margin:0;font-size:1.5rem}
+    .sub{color:var(--muted);margin-top:6px}
+
+    /* legend */
+    .legend{display:flex;gap:16px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:16px 0}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:#fff}
+    .dot{width:10px;height:10px;border-radius:50%}
+    .dot.medical{background:var(--medical)}
+    .dot.id{background:var(--id)}
+    .dot.wage{background:var(--wage)}
+
+    /* cards & lists */
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow)}
+    .panel{padding:16px}
+    .file-list{list-style:none;margin:0;padding:0}
+    .file-item{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border)}
+    .file-item:last-child{border-bottom:none}
+    .file-meta{display:flex;align-items:center;gap:14px}
+    .badge{border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700}
+    .badge.medical{background:#d1fae5;color:#065f46}  /* light green */
+    .badge.id{background:#dbeafe;color:#1e3a8a}       /* light blue */
+    .badge.wage{background:#fef3c7;color:#92400e}     /* light orange */
+    .muted{color:var(--muted);font-size:.92rem}
+
+    /* layout for detail sections */
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .field{margin-bottom:12px}
+    .field label{display:block;font-weight:600;margin-bottom:6px}
+    .field input,.field textarea,.field select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:#fff}
+    .preview{border:2px dashed var(--border);border-radius:10px;min-height:260px;
+      background:repeating-linear-gradient(45deg,#fafafa,#fafafa 10px,#fff 10px,#fff 20px);
+      display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:600}
+
+    /* buttons */
+    .btn{appearance:none;border:1px solid var(--border);background:#fff;color:var(--text);
+         padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:700}
+    .btn:hover{background:#f8fafc}
+    .btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .btn.primary:hover{background:var(--primary-600)}
+    .toolbar{display:flex;gap:10px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--border);background:#fcfcfd;border-radius:0 0 10px 10px}
+
+    /* section switching */
+    .section{display:none}
+    .section.active{display:block}
+
+    .top-actions{display:flex;align-items:center;gap:12px;margin-top:8px}
+    a.link{color:var(--primary);text-decoration:none;font-weight:700}
+    a.link:hover{text-decoration:underline}
+  </style>
+
+  <!-- ADDITIONS: navbar + button theme using your colors (appended, original untouched) -->
+  <style>
+    :root{
+      /* Your theme colors */
+      --primary-blue:#002d72;
+      --accent-gold:#ffb81c;
+      /* Optional darker shade for hover */
+      --primary-blue-600:#001e5a;
+    }
+
+    /* Navbar */
+    .navbar {
+      background: var(--primary-blue);
+      color: #fff;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+    }
+    .navbar a { color:#fff; text-decoration:none; }
+    .navbar .logo { display:flex; align-items:center; gap:10px; }
+    .navbar .logo img { height: 40px; }
+
+    /* Button theme overrides */
+    .btn.primary{
+      background: var(--primary-blue);
+      border-color: var(--primary-blue);
+      color: #fff;
+    }
+    .btn.primary:hover{
+      background: var(--primary-blue-600);
+    }
+    .btn.accent{
+      background: var(--accent-gold);
+      border-color: var(--accent-gold);
+      color: #111; /* better contrast on gold */
+    }
+    .btn.accent:hover{
+      filter: brightness(0.95);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR (attached) -->
+  <div class="navbar">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='images/LOGO.png') }}" alt="Logo" />
+      <span>WICA</span>
+    </div>
+    <div><a href="{{ url_for('claims') }}">← Back to Claims</a></div>
+  </div>
+
+  <header>
+    <h1>Review – Claim 2- AWS25-0091</h1>
+    <div class="sub">Select a file to review. Use Next/Previous to move between files.</div>
+    <!-- (Legend removed from header as requested) -->
+  </header>
+  
+  <main>
+    <!-- SECTION A: File List (hub) -->
+    <section id="file-list" class="section active">
+      <div class="card">
+        <div class="panel">
+
+          <!-- Color legend is NOW placed here (only on list page) -->
+          <div class="legend">
+            <span class="pill"><span class="dot medical"></span> Medical</span>
+            <span class="pill"><span class="dot id"></span> ID</span>
+            <span class="pill"><span class="dot wage"></span> Wage Report</span>
+          </div>
+
+          <ul class="file-list">
+            <li class="file-item">
+              <div class="file-meta">
+                <span class="badge medical">File 1</span>
+                <span><strong>Hasan_Medical_Report.pdf</strong></span>
+                <span class="muted">• Last modified: <span id="lm1">—</span></span>
+              </div>
+              <button class="btn primary" onclick="openFile(1)">Review</button>
+            </li>
+            <li class="file-item">
+              <div class="file-meta">
+                <span class="badge id">File 2</span>
+                <span><strong>Hasan_ID.pdf</strong></span>
+                <span class="muted">• Last modified: <span id="lm2">—</span></span>
+              </div>
+              <button class="btn primary" onclick="openFile(2)">Review</button>
+            </li>
+            <li class="file-item">
+              <div class="file-meta">
+                <span class="badge wage">File 3</span>
+                <span><strong>Wage_report_hasan.pdf</strong></span>
+                <span class="muted">• Last modified: <span id="lm3">—</span></span>
+              </div>
+              <button class="btn primary" onclick="openFile(3)">Review</button>
+            </li>
+          </ul>
+        </div>
+
+        <!-- global actions after reviewing -->
+        <div class="toolbar">
+          <button class="btn" onclick="saveAllAndBack()">Save and Go Back</button>
+          <!-- Use accent gold for Excel action -->
+          <button class="btn accent" onclick="saveAllAndExcel()">Generate Excel</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION B1: File 1 (Medical) -->
+    <section id="file-1" class="section">
+      <div class="card">
+        <div class="panel">
+          <!-- Navigator for file sections -->
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+            <span style="font-weight:700; opacity:1;">Medical_record_files</span>
+            <span style="opacity:0.45;">→</span>
+            <span style="opacity:0.45;">ID_record_files</span>
+            <span style="opacity:0.45;">→</span>
+            <span style="opacity:0.45;">Wage_report_files</span>
+          </div>
+
+          <h2 style="margin-top:0">Hasan_Medical_Report.pdf</h2>
+          <div class="grid">
+            <div>
+              <div class="field">
+                <label for="patientName">Patient Name</label>
+                <input id="patientName" placeholder="HASAN MD MEHEDI">
+              </div>
+              <div class="field">
+                <label for="dob">Date of Birth</label>
+                <input id="dob" placeholder="1992-11-10">
+              </div>
+              <div class="field">
+                <label for="diagnosis">Diagnosis</label>
+                <textarea id="diagnosis" rows="3" placeholder="Falls"></textarea>
+              </div>
+            </div>
+            <div>
+              <!-- image placeholder -->
+              <!-- Replace the Medical preview box -->
+<div class="preview" style="padding:0;">
+  <object
+    data="{{ url_for('static', filename='docs/Hasan_Medical_Report.pdf') }}#toolbar=1&navpanes=0&scrollbar=1"
+    type="application/pdf"
+    width="100%"
+    height="100%"
+    style="min-height:260px; border:0;"
+  >
+    <!-- Fallback if the browser can't render PDFs -->
+    <iframe
+      src="{{ url_for('static', filename='docs/Hasan_Medical_Report.pdf') }}"
+      width="100%"
+      height="100%"
+      style="min-height:260px; border:0;"
+    ></iframe>
+  </object>
+</div>
+
+            </div>
+          </div>
+        </div>
+        <div class="toolbar">
+          <button class="btn" onclick="saveFile(1)">Save</button>
+          <button class="btn primary" onclick="goNext(1)">Next</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION B2: File 2 (ID) -->
+    <section id="file-2" class="section">
+      <div class="card">
+        <div class="panel">
+          <!-- Navigator for file sections -->
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+            <span style="opacity:0.45;">Medical_record_files</span>
+            <span style="opacity:0.45;">→</span>
+            <span style="font-weight:700; opacity:1;">ID_record_files</span>
+            <span style="opacity:0.45;">→</span>
+            <span style="opacity:0.45;">Wage_report_files</span>
+          </div>
+
+          <h2 style="margin-top:0">Hasan_ID.pdf</h2>
+          <div class="grid">
+            <div>
+              <div class="field">
+                <label for="idType">ID Type</label>
+                <select id="idType">
+                  <option value="">Passport</option>
+                  <option>Passport</option>
+                  <option>Driver License</option>
+                  <option>National ID</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="idNumber">ID Number</label>
+                <input id="idNumber" placeholder="A11125405">
+              </div>
+              <div class="field">
+                <label for="idExpiry">Expiry Date</label>
+                <input id="idExpiry" placeholder="2033-07-02">
+              </div>
+            </div>
+            <div>
+              <!-- Replace the ID preview box -->
+<div class="preview" style="padding:0;">
+  <object
+    data="{{ url_for('static', filename='docs/Hasan_ID.pdf') }}#toolbar=1&navpanes=0&scrollbar=1"
+    type="application/pdf"
+    width="100%"
+    height="100%"
+    style="min-height:260px; border:0;"
+  >
+    <iframe
+      src="{{ url_for('static', filename='docs/Hasan_ID.pdf') }}"
+      width="100%"
+      height="100%"
+      style="min-height:260px; border:0;"
+    ></iframe>
+  </object>
+</div>
+            </div>
+          </div>
+        </div>
+        <div class="toolbar">
+          <button class="btn" onclick="goPrev(2)">← Previous </button>
+          <button class="btn" onclick="saveFile(2)">Save</button>
+          <button class="btn primary" onclick="goNext(2)">Next </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION B3: File 3 (Wage Report) -->
+    <section id="file-3" class="section">
+      <div class="card">
+        <div class="panel">
+          <!-- Navigator for file sections -->
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+            <span style="opacity:0.45;">Medical_record_files</span>
+            <span style="opacity:0.45;">→</span>
+            <span style="opacity:0.45;">ID_record_files</span>
+            <span style="opacity:0.45;">→</span>
+            <span style="font-weight:700; opacity:1;">Wage_report_files</span>
+          </div>
+
+          <h2 style="margin-top:0">Wage_report_hasan.pdf</h2>
+          <div class="grid">
+            <div>
+              <div class="field">
+                <label for="employer">Employer</label>
+                <input id="employer" placeholder="TECHCOM CONSTRUCTION &amp; TRADING PTE LTD">
+              </div>
+              <div class="field">
+                <label for="payPeriod">Pay Period</label>
+                <input id="payPeriod" placeholder="2024-02-01 to 2025-01-31">
+              </div>
+              <div class="field">
+                <label for="grossWages">Gross Wages</label>
+                <input id="grossWages" placeholder="$ 10218.00">
+              </div>
+            </div>
+            <div>
+              <!-- Replace the Wage Report preview box -->
+<div class="preview" style="padding:0;">
+  <object
+    data="{{ url_for('static', filename='docs/Wage_report_hasan.pdf') }}#toolbar=1&navpanes=0&scrollbar=1"
+    type="application/pdf"
+    width="100%"
+    height="100%"
+    style="min-height:260px; border:0;"
+  >
+    <iframe
+      src="{{ url_for('static', filename='docs/Wage_report_hasan.pdf') }}"
+      width="100%"
+      height="100%"
+      style="min-height:260px; border:0;"
+    ></iframe>
+  </object>
+</div>
+
+            </div>
+          </div>
+        </div>
+        <div class="toolbar">
+          <button class="btn" onclick="goPrev(3)">← Previous </button>
+          <button class="btn" onclick="saveFileAndBack()">Save and Go Back</button>
+          <!-- No Next here per your spec -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ----- Minimal front-end state (no backend calls yet) -----
+    const claimId = "{{ claim_id }}";
+    const STORAGE_KEY = `claim_${claimId}_data`;
+
+    function getData() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+      catch { return {}; }
+    }
+    function setData(obj) { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
+
+    // Section switcher
+    function showSection(id){
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+    function openFile(n){ showSection(`file-${n}`); }
+    function goNext(n){ openFile(n+1); }
+    function goPrev(n){ openFile(n-1); }
+
+    // Save fields for each file + update "Last modified"
+    function saveFile(n){
+      const data = getData();
+      data.files = data.files || {};
+      if(n===1){
+        data.files.file1 = {
+          patientName: document.getElementById('patientName').value,
+          dob: document.getElementById('dob').value,
+          diagnosis: document.getElementById('diagnosis').value
+        };
+      }else if(n===2){
+        data.files.file2 = {
+          idType: document.getElementById('idType').value,
+          idNumber: document.getElementById('idNumber').value,
+          idExpiry: document.getElementById('idExpiry').value
+        };
+      }else if(n===3){
+        data.files.file3 = {
+          employer: document.getElementById('employer').value,
+          payPeriod: document.getElementById('payPeriod').value,
+          grossWages: document.getElementById('grossWages').value
+        };
+      }
+      setData(data);
+      const now = new Date().toISOString().replace('T',' ').slice(0,16);
+      const lmId = {1:'lm1',2:'lm2',3:'lm3'}[n];
+      if(lmId) document.getElementById(lmId).textContent = now;
+      alert(`File ${n} saved`);
+    }
+    function saveFileAndBack() {
+      saveFile(3);                // Save current file
+      showSection("file-list");   // Go back to the main review (file list) section
+    }
+
+    // Global actions from the file list
+    function saveAllAndBack(){
+      window.location.href = "{{ url_for('claims') }}";
+    }
+    function saveAllAndExcel(){
+      window.location.href = "{{ url_for('excel_preview', claim_id=claim_id) }}";
+    }
+
+    // Preload saved values if any (from localStorage)
+    (function preload(){
+      const data = getData();
+      if(data.files?.file1){
+        patientName.value = data.files.file1.patientName || '';
+        dob.value = data.files.file1.dob || '';
+        diagnosis.value = data.files.file1.diagnosis || '';
+      }
+      if(data.files?.file2){
+        idType.value = data.files.file2.idType || '';
+        idNumber.value = data.files.file2.idNumber || '';
+        idExpiry.value = data.files.file2.idExpiry || '';
+      }
+      if(data.files?.file3){
+        employer.value = data.files.file3.employer || '';
+        payPeriod.value = data.files.file3.payPeriod || '';
+        grossWages.value = data.files.file3.grossWages || '';
+      }
+    })();
+  </script>
+</body>
+</html>
