@@ -6,6 +6,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
   <style>
+    .excel-like {
+  border-collapse: collapse;
+  background: #fff;
+  table-layout: fixed;
+  font-family: Calibri, Segoe UI, Arial, sans-serif;
+}
+
+.excel-like td {
+  padding: 2px 4px;
+  font-size: 13px;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-body {
+  overflow: auto;
+  background: #dfe3ea;     /* grey margin like Excel canvas */
+  padding: 14px;
+}
+
+.sheet-panel {
+  background: #ffffff;
+  padding: 10px;
+  border: 1px solid #cfd6e4;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
     :root { --primary-blue:#002d72; --accent-gold:#ffb81c; --text-color:#333; --bg:#f9f9f9; }
     body { font-family:'Segoe UI', Arial, sans-serif; margin:0; background:var(--bg); }
     .navbar { background:var(--primary-blue); color:#fff; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; font-weight:600; }
