@@ -1,0 +1,635 @@
+<!-- templates/review.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Review – Claim {{ claim_id }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- ORIGINAL + UPDATED STYLES -->
+  <style>
+    :root{
+      --bg:#f8fafc; --panel:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280;
+      --primary:#2563eb; --primary-600:#1d4ed8; --shadow:0 6px 20px rgba(0,0,0,0.06);
+      /* legend colors */
+      --medical:#16a34a;  /* green */
+      --id:#2563eb;       /* blue */
+      --wage:#f59e0b;     /* orange */
+      /* preview heights */
+      --preview-h: 60vh;
+      --preview-h-review: 72vh;
+    }
+
+    /* Base & % height chain */
+    html, body { height: 100%; margin: 0; }
+    *{box-sizing:border-box}
+    body{font-family:system-ui,-apple-system, Segoe UI, Roboto, Arial, sans-serif;background:var(--bg);color:var(--text)}
+    header{background:var(--panel);border-bottom:1px solid var(--border);padding:16px 24px}
+    main{padding:24px;max-width:1100px;margin:0 auto}
+    h1{margin:0;font-size:1.5rem}
+    .sub{color:var(--muted);margin-top:6px}
+
+    /* legend */
+    .legend{display:flex;gap:16px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:16px 0}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:#fff}
+    .dot{width:10px;height:10px;border-radius:50%}
+    .dot.medical{background:var(--medical)}
+    .dot.id{background:var(--id)}
+    .dot.wage{background:var(--wage)}
+
+    /* cards & lists */
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow)}
+    .panel{padding:16px}
+    .file-list{list-style:none;margin:0;padding:0}
+    .file-item{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border)}
+    .file-item:last-child{border-bottom:none}
+    .file-meta{display:flex;align-items:center;gap:14px}
+    .badge{border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700}
+    .badge.medical{background:#d1fae5;color:#065f46}
+    .badge.id{background:#dbeafe;color:#1e3a8a}
+    .badge.wage{background:#fef3c7;color:#92400e}
+    .muted{color:var(--muted);font-size:.92rem}
+
+    /* layout for detail sections */
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px; min-height: 0;}
+    .field{margin-bottom:12px}
+    .field label{display:block;font-weight:600;margin-bottom:6px}
+    .field input,.field textarea,.field select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:#fff}
+
+    /* Preview area fills completely */
+    .preview{
+      border:2px dashed var(--border);
+      border-radius:10px;
+      background:repeating-linear-gradient(45deg,#fafafa,#fafafa 10px,#fff 10px,#fff 20px);
+      color:var(--muted);font-weight:600;
+      height: var(--preview-h);
+      min-height: 260px;
+      min-width: 0; min-height: 0;
+      padding: 0;
+      overflow: hidden;
+      display: block;
+    }
+    .pdf-frame{
+      display:block;
+      width:100%;
+      height:100%;
+      border:0;
+    }
+
+    /* buttons */
+    .btn{appearance:none;border:1px solid var(--border);background:#fff;color:var(--text);
+         padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:700}
+    .btn:hover{background:#f8fafc}
+    .btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .btn.primary:hover{background:var(--primary-600)}
+    .toolbar{display:flex;gap:10px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--border);background:#fcfcfd;border-radius:0 0 10px 10px}
+
+    /* section switching */
+    .section{display:none}
+    .section.active{display:block}
+
+    .top-actions{display:flex;align-items:center;gap:12px;margin-top:8px}
+    a.link{color:var(--primary);text-decoration:none;font-weight:700}
+    a.link:hover{text-decoration:underline}
+  </style>
+
+  <!-- THEME AND REVIEW LAYOUT -->
+  <style>
+    :root{
+      --primary-blue:#002d72;
+      --accent-gold:#ffb81c;
+      --primary-blue-600:#001e5a;
+    }
+
+    /* Navbar */
+    .navbar {
+      background: var(--primary-blue);
+      color: #fff;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+    }
+    .navbar a { color:#fff; text-decoration:none; }
+    .navbar .logo { display:flex; align-items:center; gap:10px; }
+    .navbar .logo img { height: 40px; }
+
+    /* Button theme overrides */
+    .btn.primary{
+      background: var(--primary-blue);
+      border-color: var(--primary-blue);
+      color: #fff;
+    }
+    .btn.primary:hover{
+      background: var(--primary-blue-600);
+    }
+    .btn.accent{
+      background: var(--accent-gold);
+      border-color: var(--accent-gold);
+      color: #111;
+    }
+    .btn.accent:hover{
+      filter: brightness(0.95);
+    }
+
+    /* App layout */
+    .app-layout{
+      display: grid;
+      grid-template-columns: 1fr; /* default: file list view */
+      gap: 18px;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px 24px;
+      min-height: 0;
+    }
+    body.reviewing .app-layout{
+      grid-template-columns: 260px 1fr; /* wider sidebar */
+      max-width: 1400px;
+    }
+
+    /* === New side navigation with hierarchy === */
+    #reviewSideNav{
+      display: none;
+      border-right: 1px solid var(--border);
+      padding: 16px 12px 16px 0;
+      position: sticky;
+      top: 16px;
+      align-self: start;
+      height: fit-content;
+      background: transparent;
+    }
+    body.reviewing #reviewSideNav{ display: block; }
+
+    #reviewSideNav h3{
+      margin: 0 0 10px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Hierarchy rows */
+    .nav-crumbs{
+      font-size: .92rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .nav-crumbs .sep{ opacity: .5; padding: 0 6px; }
+
+    .nav-group{
+      margin: 10px 0 14px;
+    }
+    .nav-group .group-head{
+      display:flex; align-items:center; gap:8px;
+      font-weight:800; font-size:.95rem;
+      padding:8px 10px;
+      border-radius:8px;
+      color: var(--text);
+    }
+    .nav-group .group-head .dot{ width:10px; height:10px; border-radius:50%; }
+    .nav-group .group-list{
+      list-style:none; margin:6px 0 0 0; padding:0 0 0 16px;
+      border-left: 2px solid var(--border);
+    }
+    .nav-group .group-list li{
+      margin: 2px 0;
+    }
+    .side-file{
+      display:flex; align-items:center; gap:8px;
+      padding:6px 10px;
+      border-radius:8px;
+      cursor:pointer;
+      color:var(--text);
+      text-decoration:none;
+      font-weight:600;
+    }
+    .side-file:hover{ background:#f8fafc; }
+    .side-file.active{
+      background:#eef2ff;
+      color:var(--primary-blue);
+    }
+
+    /* Active indicator (applied to the side-file that maps to current section) */
+    .side-file .bullet {
+      width:6px; height:6px; border-radius:50%;
+      background: currentColor; opacity:.7;
+    }
+
+    /* Bigger preview while reviewing */
+    body.reviewing main{ max-width: 1400px; }
+    body.reviewing .grid{
+      grid-template-columns: 1fr 1.35fr;
+      min-height: 0;
+    }
+    body.reviewing .preview{
+      height: var(--preview-h-review);
+    }
+
+    /* Link-like button for navbar back */
+    .link-btn{
+      appearance:none;
+      background:none;
+      border:none;
+      color:#fff;
+      font-weight:700;
+      cursor:pointer;
+      padding:0;
+    }
+    .link-btn:hover{ text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='images/LOGO.png') }}" alt="Logo" />
+      <span>WICA</span>
+    </div>
+    <div>
+      <!-- Visible only on file list -->
+      <a id="navBackClaims" href="{{ url_for('claims') }}">← Back to Claims</a>
+      <!-- Visible only while reviewing -->
+      <button id="navBackReview" class="link-btn" style="display:none;" onclick="backToReview()">← Back to Review</button>
+    </div>
+  </div>
+
+  <!-- LAYOUT WRAPPER -->
+  <div class="app-layout">
+    <!-- SHARED SIDE NAV (component) -->
+    <aside id="reviewSideNav" aria-label="File navigation">
+      <h3>Files</h3>
+      <!-- Medical group -->
+      <div class="nav-group" id="group-medical">
+        <div class="group-head">
+          <span class="dot medical"></span>
+          <span>Medical_record_files</span>
+        </div>
+        <ul class="group-list">
+          <li>
+            <a class="side-file" data-target="file-1" onclick="openFile(1)">
+              <span class="bullet"></span>
+              <span>Hasan_Medical_Report.pdf</span>
+            </a>
+          </li>
+          <!-- If you later add more medical files, add them here -->
+        </ul>
+      </div>
+
+      <!-- ID group -->
+      <div class="nav-group" id="group-id">
+        <div class="group-head">
+          <span class="dot id"></span>
+          <span>ID_record_files</span>
+        </div>
+        <ul class="group-list">
+          <li>
+            <a class="side-file" data-target="file-2" onclick="openFile(2)">
+              <span class="bullet"></span>
+              <span>Hasan_ID.pdf</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Wage group -->
+      <div class="nav-group" id="group-wage">
+        <div class="group-head">
+          <span class="dot wage"></span>
+          <span>Wage_report_files</span>
+        </div>
+        <ul class="group-list">
+          <li>
+            <a class="side-file" data-target="file-3" onclick="openFile(3)">
+              <span class="bullet"></span>
+              <span>Wage_report_hasan.pdf</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- CONTENT COLUMN -->
+    <div>
+      <header>
+        <h1>Review – Claim {{ claim_id }}</h1>
+        <div class="sub">Select a file to review. Use Next/Previous to move between files.</div>
+      </header>
+      
+      <main>
+        <!-- SECTION A: File List (hub) -->
+        <section id="file-list" class="section active">
+          <div class="card">
+            <div class="panel">
+              <!-- Color legend placed here (only on list page) -->
+              <div class="legend">
+                <span class="pill"><span class="dot medical"></span> Medical</span>
+                <span class="pill"><span class="dot id"></span> ID</span>
+                <span class="pill"><span class="dot wage"></span> Wage Report</span>
+              </div>
+
+              <ul class="file-list">
+                <li class="file-item">
+                  <div class="file-meta">
+                    <span class="dot medical"></span>
+                    <span><strong>Hasan_Medical_Report.pdf</strong></span>
+                    <span class="muted">• Last modified: <span id="lm1">2026-02-05 12:02</span></span>
+                  </div>
+                  <button class="btn primary" onclick="openFile(1)">Review</button>
+                </li>
+                <li class="file-item">
+                  <div class="file-meta">
+                    <span class="dot id"></span>
+                    <span><strong>Hasan_ID.pdf</strong></span>
+                    <span class="muted">• Last modified: <span id="lm2">2026-02-05 12:02</span></span>
+                  </div>
+                  <button class="btn primary" onclick="openFile(2)">Review</button>
+                </li>
+                <li class="file-item">
+                  <div class="file-meta">
+                    <span class="dot wage"></span>
+                    <span><strong>Wage_report_hasan.pdf</strong></span>
+                    <span class="muted">• Last modified: <span id="lm3">2026-02-05 12:02</span></span>
+                  </div>
+                  <button class="btn primary" onclick="openFile(3)">Review</button>
+                </li>
+              </ul>
+            </div>
+
+            <!-- global actions after reviewing -->
+            <div class="toolbar">
+              <button class="btn" onclick="saveAllAndBack()">Save and Go Back</button>
+              <button class="btn accent" onclick="saveAllAndExcel()">Generate Excel</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION B1: File 1 (Medical) -->
+        <section id="file-1" class="section">
+          <div class="card">
+            <div class="panel">
+              <!-- Breadcrumbs removed from central panel -->
+              <h2 style="margin-top:0">Hasan_Medical_Report.pdf</h2>
+              <div class="grid">
+                <div>
+                  <div class="field">
+                    <label for="patientName">Patient Name</label>
+                    <input id="patientName" placeholder="HASAN MD MEHEDI">
+                  </div>
+                  <div class="field">
+                    <label for="dob">Date of Birth</label>
+                    <input id="dob" placeholder="1992-11-10">
+                  </div>
+                  <div class="field">
+                    <label for="diagnosis">Diagnosis</label>
+                    <textarea id="diagnosis" rows="3" placeholder="Falls"></textarea>
+                  </div>
+                </div>
+                <div>
+                  <!-- Preview -->
+                  <div class="preview" aria-label="Hasan Medical Report PDF">
+                    <object
+                      data="{{ url_for('static', filename='docs/Hasan_Medical_Report.pdf') }}#toolbar=1&navpanes=0&scrollbar=1&zoom=page-width&view=FitH"
+                      type="application/pdf"
+                      class="pdf-frame"
+                    >
+                      <!-- Fallback -->
+                      <iframe
+                        src="{{ url_for('static', filename='docs/Hasan_Medical_Report.pdf') }}#zoom=page-width"
+                        class="pdf-frame"
+                      ></iframe>
+                    </object>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span style="flex:1"></span>
+              <button class="btn" onclick="saveFile(1)">Save</button>
+              <button class="btn primary" onclick="goNext(1)">Next</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION B2: File 2 (ID) -->
+        <section id="file-2" class="section">
+          <div class="card">
+            <div class="panel">
+              <h2 style="margin-top:0">Hasan_ID.pdf</h2>
+              <div class="grid">
+                <div>
+                  <div class="field">
+                    <label for="idType">ID Type</label>
+                    <select id="idType">
+                      <option>Passport</option>
+                      <option>Driver License</option>
+                      <option>National ID</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="idNumber">ID Number</label>
+                    <input id="idNumber" placeholder="A11125405">
+                  </div>
+                  <div class="field">
+                    <label for="idExpiry">Expiry Date</label>
+                    <input id="idExpiry" placeholder="2033-07-02">
+                  </div>
+                </div>
+                <div>
+                  <div class="preview" aria-label="Hasan ID PDF">
+                    <object
+                      data="{{ url_for('static', filename='docs/Hasan_ID.pdf') }}#toolbar=1&navpanes=0&scrollbar=1&zoom=page-width&view=FitH"
+                      type="application/pdf"
+                      class="pdf-frame"
+                    >
+                      <iframe
+                        src="{{ url_for('static', filename='docs/Hasan_ID.pdf') }}#zoom=page-width"
+                        class="pdf-frame"
+                      ></iframe>
+                    </object>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span style="flex:1"></span>
+              <button class="btn" onclick="goPrev(2)">← Previous </button>
+              <button class="btn" onclick="saveFile(2)">Save</button>
+              <button class="btn primary" onclick="goNext(2)">Next </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION B3: File 3 (Wage Report) -->
+        <section id="file-3" class="section">
+          <div class="card">
+            <div class="panel">
+              <h2 style="margin-top:0">Wage_report_hasan.pdf</h2>
+              <div class="grid">
+                <div>
+                  <div class="field">
+                    <label for="employer">Employer</label>
+                    <input id="employer" placeholder="TECHCOM CONSTRUCTION &amp; TRADING PTE LTD">
+                  </div>
+                  <div class="field">
+                    <label for="payPeriod">Pay Period</label>
+                    <input id="payPeriod" placeholder="2024-02-01 to 2025-01-31">
+                  </div>
+                  <div class="field">
+                    <label for="grossWages">Gross Wages</label>
+                    <input id="grossWages" placeholder="$ 10218.00">
+                  </div>
+                </div>
+                <div>
+                  <div class="preview" aria-label="Hasan Wage Report PDF">
+                    <object
+                      data="{{ url_for('static', filename='docs/Wage_report_hasan.pdf') }}#toolbar=1&navpanes=0&scrollbar=1&zoom=page-width&view=FitH"
+                      type="application/pdf"
+                      class="pdf-frame"
+                    >
+                      <iframe
+                        src="{{ url_for('static', filename='docs/Wage_report_hasan.pdf') }}#zoom=page-width"
+                        class="pdf-frame"
+                      ></iframe>
+                    </object>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span style="flex:1"></span>
+              <button class="btn" onclick="goPrev(3)">← Previous </button>
+              <button class="btn primary" onclick="saveFileAndBack()">Save and Go Back</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // ----- Minimal front-end state (no backend calls yet) -----
+    const claimId = "{{ claim_id }}";
+    const STORAGE_KEY = `claim_${claimId}_data`;
+
+    function getData() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+      catch { return {}; }
+    }
+    function setData(obj) { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
+
+    // UI toggles for reviewing/list states
+    function toggleUIForSection(id){
+      const onList = (id === 'file-list');
+
+      // Layout & sidebar
+      document.body.classList.toggle('reviewing', !onList);
+
+      // Navbar back links
+      const backClaims = document.getElementById('navBackClaims');
+      const backReview = document.getElementById('navBackReview');
+      if (backClaims) backClaims.style.display = onList ? '' : 'none';
+      if (backReview) backReview.style.display = onList ? 'none' : '';
+
+      // Sidebar active state (highlight the file link)
+      const map = {'file-1':1, 'file-2':2, 'file-3':3};
+      const n = map[id];
+      document.querySelectorAll('#reviewSideNav .side-file').forEach(el => el.classList.remove('active'));
+      if (n) {
+        const selector = `#reviewSideNav .side-file[data-target="file-${n}"]`;
+        document.querySelectorAll(selector).forEach(el => el.classList.add('active'));
+      }
+    }
+
+    // Section switcher
+    function showSection(id){
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      const target = document.getElementById(id);
+      if (target) {
+        target.classList.add('active');
+        window.scrollTo({top: 0, behavior: 'smooth'});
+        toggleUIForSection(id);
+      }
+    }
+    function openFile(n){ showSection(`file-${n}`); }
+    function goNext(n){ openFile(n+1); }
+    function goPrev(n){ openFile(n-1); }
+    function backToReview(){ showSection('file-list'); }
+
+    // Save fields for each file + update "Last modified"
+    function saveFile(n){
+      const data = getData();
+      data.files = data.files || {};
+      if(n===1){
+        data.files.file1 = {
+          patientName: document.getElementById('patientName').value,
+          dob: document.getElementById('dob').value,
+          diagnosis: document.getElementById('diagnosis').value
+        };
+      }else if(n===2){
+        data.files.file2 = {
+          idType: document.getElementById('idType').value,
+          idNumber: document.getElementById('idNumber').value,
+          idExpiry: document.getElementById('idExpiry').value
+        };
+      }else if(n===3){
+        data.files.file3 = {
+          employer: document.getElementById('employer').value,
+          payPeriod: document.getElementById('payPeriod').value,
+          grossWages: document.getElementById('grossWages').value
+        };
+      }
+      setData(data);
+      const now = new Date().toISOString().replace('T',' ').slice(0,16);
+      const lmId = {1:'lm1',2:'lm2',3:'lm3'}[n];
+      if(lmId) document.getElementById(lmId).textContent = now;
+      alert(`File ${n} saved`);
+    }
+
+    // Save current active file and go back to the file list
+    function saveFileAndBack() {
+      if (document.getElementById('file-3')?.classList.contains('active')) {
+        saveFile(3);
+      } else if (document.getElementById('file-2')?.classList.contains('active')) {
+        saveFile(2);
+      } else if (document.getElementById('file-1')?.classList.contains('active')) {
+        saveFile(1);
+      }
+      showSection("file-list");
+    }
+
+    // Global actions from the file list
+    function saveAllAndBack(){
+      window.location.href = "{{ url_for('claims') }}";
+    }
+    function saveAllAndExcel(){
+      window.location.href = "{{ url_for('excel_preview', claim_id=claim_id) }}";
+    }
+
+    // Preload saved values if any (from localStorage)
+    (function preload(){
+      const data = getData();
+      if(data.files?.file1){
+        patientName.value = data.files.file1.patientName || '';
+        dob.value = data.files.file1.dob || '';
+        diagnosis.value = data.files.file1.diagnosis || '';
+      }
+      if(data.files?.file2){
+        idType.value = data.files.file2.idType || '';
+        idNumber.value = data.files.file2.idNumber || '';
+        idExpiry.value = data.files.file2.idExpiry || '';
+      }
+      if(data.files?.file3){
+        employer.value = data.files.file3.employer || '';
+        payPeriod.value = data.files.file3.payPeriod || '';
+        grossWages.value = data.files.file3.grossWages || '';
+      }
+
+      // Land on the list by default
+      toggleUIForSection('file-list');
+    })();
+  </script>
+</body>
+</html>
