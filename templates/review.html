@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <title>Review – Claim {{ claim_id }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- ORIGINAL STYLES (kept) -->
+  <!-- ORIGINAL + UPDATED STYLES -->
   <style>
     :root{
       --bg:#f8fafc; --panel:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280;
@@ -14,9 +14,15 @@
       --medical:#16a34a;  /* green */
       --id:#2563eb;       /* blue */
       --wage:#f59e0b;     /* orange */
+      /* preview heights */
+      --preview-h: 60vh;
+      --preview-h-review: 72vh;
     }
+
+    /* Base & % height chain */
+    html, body { height: 100%; margin: 0; }
     *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    body{font-family:system-ui,-apple-system, Segoe UI, Roboto, Arial, sans-serif;background:var(--bg);color:var(--text)}
     header{background:var(--panel);border-bottom:1px solid var(--border);padding:16px 24px}
     main{padding:24px;max-width:1100px;margin:0 auto}
     h1{margin:0;font-size:1.5rem}
@@ -38,19 +44,36 @@
     .file-item:last-child{border-bottom:none}
     .file-meta{display:flex;align-items:center;gap:14px}
     .badge{border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700}
-    .badge.medical{background:#d1fae5;color:#065f46}  /* light green */
-    .badge.id{background:#dbeafe;color:#1e3a8a}       /* light blue */
-    .badge.wage{background:#fef3c7;color:#92400e}     /* light orange */
+    .badge.medical{background:#d1fae5;color:#065f46}
+    .badge.id{background:#dbeafe;color:#1e3a8a}
+    .badge.wage{background:#fef3c7;color:#92400e}
     .muted{color:var(--muted);font-size:.92rem}
 
     /* layout for detail sections */
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px; min-height: 0;}
     .field{margin-bottom:12px}
     .field label{display:block;font-weight:600;margin-bottom:6px}
     .field input,.field textarea,.field select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:#fff}
-    .preview{border:2px dashed var(--border);border-radius:10px;min-height:260px;
+
+    /* Preview area fills completely */
+    .preview{
+      border:2px dashed var(--border);
+      border-radius:10px;
       background:repeating-linear-gradient(45deg,#fafafa,#fafafa 10px,#fff 10px,#fff 20px);
-      display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:600}
+      color:var(--muted);font-weight:600;
+      height: var(--preview-h);
+      min-height: 260px;
+      min-width: 0; min-height: 0;
+      padding: 0;
+      overflow: hidden;
+      display: block;
+    }
+    .pdf-frame{
+      display:block;
+      width:100%;
+      height:100%;
+      border:0;
+    }
 
     /* buttons */
     .btn{appearance:none;border:1px solid var(--border);background:#fff;color:var(--text);
@@ -69,7 +92,7 @@
     a.link:hover{text-decoration:underline}
   </style>
 
-  <!-- THEME AND NEW LAYOUT STYLES -->
+  <!-- THEME AND REVIEW LAYOUT -->
   <style>
     :root{
       --primary-blue:#002d72;
@@ -109,22 +132,22 @@
       filter: brightness(0.95);
     }
 
-    /* ===== Review mode layout with single shared sidebar ===== */
+    /* App layout */
     .app-layout{
       display: grid;
-      grid-template-columns: 1fr; /* default: single column (file list view) */
+      grid-template-columns: 1fr; /* default: file list view */
       gap: 18px;
       max-width: 1100px;
       margin: 0 auto;
       padding: 0 24px 24px;
+      min-height: 0;
     }
-    /* When reviewing a file, expand width and show sidebar column */
     body.reviewing .app-layout{
-      grid-template-columns: 220px 1fr; /* sidebar + content */
-      max-width: 1400px;                /* wider canvas while reviewing */
+      grid-template-columns: 260px 1fr; /* wider sidebar */
+      max-width: 1400px;
     }
 
-    /* Shared left sidebar component (hidden on list) */
+    /* === New side navigation with hierarchy === */
     #reviewSideNav{
       display: none;
       border-right: 1px solid var(--border);
@@ -145,33 +168,63 @@
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
-    #reviewSideNav .item{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      padding:10px 12px;
+
+    /* Hierarchy rows */
+    .nav-crumbs{
+      font-size: .92rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .nav-crumbs .sep{ opacity: .5; padding: 0 6px; }
+
+    .nav-group{
+      margin: 10px 0 14px;
+    }
+    .nav-group .group-head{
+      display:flex; align-items:center; gap:8px;
+      font-weight:800; font-size:.95rem;
+      padding:8px 10px;
+      border-radius:8px;
+      color: var(--text);
+    }
+    .nav-group .group-head .dot{ width:10px; height:10px; border-radius:50%; }
+    .nav-group .group-list{
+      list-style:none; margin:6px 0 0 0; padding:0 0 0 16px;
+      border-left: 2px solid var(--border);
+    }
+    .nav-group .group-list li{
+      margin: 2px 0;
+    }
+    .side-file{
+      display:flex; align-items:center; gap:8px;
+      padding:6px 10px;
       border-radius:8px;
       cursor:pointer;
       color:var(--text);
+      text-decoration:none;
       font-weight:600;
     }
-    #reviewSideNav .item:hover{ background:#f8fafc; }
-    #reviewSideNav .item.active{
+    .side-file:hover{ background:#f8fafc; }
+    .side-file.active{
       background:#eef2ff;
       color:var(--primary-blue);
     }
-    #reviewSideNav .dot{ width:10px; height:10px; border-radius:50%; }
-    #reviewSideNav .dot.medical{ background:var(--medical); }
-    #reviewSideNav .dot.id{ background:var(--id); }
-    #reviewSideNav .dot.wage{ background:var(--wage); }
 
-    /* Bigger preview + wider content while reviewing */
+    /* Active indicator (applied to the side-file that maps to current section) */
+    .side-file .bullet {
+      width:6px; height:6px; border-radius:50%;
+      background: currentColor; opacity:.7;
+    }
+
+    /* Bigger preview while reviewing */
     body.reviewing main{ max-width: 1400px; }
     body.reviewing .grid{
-      grid-template-columns: 1fr 1.35fr; /* more space to the preview column */
+      grid-template-columns: 1fr 1.35fr;
+      min-height: 0;
     }
     body.reviewing .preview{
-      min-height: 520px; /* increased viewing area */
+      height: var(--preview-h-review);
     }
 
     /* Link-like button for navbar back */
@@ -203,19 +256,58 @@
     </div>
   </div>
 
-  <!-- LAYOUT WRAPPER: sidebar (only in review) + content -->
+  <!-- LAYOUT WRAPPER -->
   <div class="app-layout">
     <!-- SHARED SIDE NAV (component) -->
     <aside id="reviewSideNav" aria-label="File navigation">
       <h3>Files</h3>
-      <div class="item" data-target="file-1" onclick="openFile(1)">
-        <span>Hasan_Medical_Report.pdf</span>
+      <!-- Medical group -->
+      <div class="nav-group" id="group-medical">
+        <div class="group-head">
+          <span class="dot medical"></span>
+          <span>Medical_record_files</span>
+        </div>
+        <ul class="group-list">
+          <li>
+            <a class="side-file" data-target="file-1" onclick="openFile(1)">
+              <span class="bullet"></span>
+              <span>Hasan_Medical_Report.pdf</span>
+            </a>
+          </li>
+          <!-- If you later add more medical files, add them here -->
+        </ul>
       </div>
-      <div class="item" data-target="file-2" onclick="openFile(2)">
-        <span>Hasan_ID.pdf</span>
+
+      <!-- ID group -->
+      <div class="nav-group" id="group-id">
+        <div class="group-head">
+          <span class="dot id"></span>
+          <span>ID_record_files</span>
+        </div>
+        <ul class="group-list">
+          <li>
+            <a class="side-file" data-target="file-2" onclick="openFile(2)">
+              <span class="bullet"></span>
+              <span>Hasan_ID.pdf</span>
+            </a>
+          </li>
+        </ul>
       </div>
-      <div class="item" data-target="file-3" onclick="openFile(3)">
-        <span>Wage_report_hasan.pdf</span>
+
+      <!-- Wage group -->
+      <div class="nav-group" id="group-wage">
+        <div class="group-head">
+          <span class="dot wage"></span>
+          <span>Wage_report_files</span>
+        </div>
+        <ul class="group-list">
+          <li>
+            <a class="side-file" data-target="file-3" onclick="openFile(3)">
+              <span class="bullet"></span>
+              <span>Wage_report_hasan.pdf</span>
+            </a>
+          </li>
+        </ul>
       </div>
     </aside>
 
@@ -231,7 +323,6 @@
         <section id="file-list" class="section active">
           <div class="card">
             <div class="panel">
-
               <!-- Color legend placed here (only on list page) -->
               <div class="legend">
                 <span class="pill"><span class="dot medical"></span> Medical</span>
@@ -242,24 +333,23 @@
               <ul class="file-list">
                 <li class="file-item">
                   <div class="file-meta">
-                    <!-- category badge only -->
-                    <span class="badge medical"></span>
+                    <span class="dot medical"></span>
                     <span><strong>Hasan_Medical_Report.pdf</strong></span>
-                    <span class="muted">• Last modified: <span id="lm3">2026-02-05 12:02</span></span>
+                    <span class="muted">• Last modified: <span id="lm1">2026-02-05 12:02</span></span>
                   </div>
                   <button class="btn primary" onclick="openFile(1)">Review</button>
                 </li>
                 <li class="file-item">
                   <div class="file-meta">
-                    <span class="badge id"></span>
+                    <span class="dot id"></span>
                     <span><strong>Hasan_ID.pdf</strong></span>
-                    <span class="muted">• Last modified: <span id="lm3">2026-02-05 12:02</span></span>
+                    <span class="muted">• Last modified: <span id="lm2">2026-02-05 12:02</span></span>
                   </div>
                   <button class="btn primary" onclick="openFile(2)">Review</button>
                 </li>
                 <li class="file-item">
                   <div class="file-meta">
-                    <span class="badge wage"></span>
+                    <span class="dot wage"></span>
                     <span><strong>Wage_report_hasan.pdf</strong></span>
                     <span class="muted">• Last modified: <span id="lm3">2026-02-05 12:02</span></span>
                   </div>
@@ -280,15 +370,7 @@
         <section id="file-1" class="section">
           <div class="card">
             <div class="panel">
-              <!-- Crumbs -->
-              <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-                <span style="font-weight:700; opacity:1;">Medical_record_files</span>
-                <span style="opacity:0.45;">→</span>
-                <span style="opacity:0.45;">ID_record_files</span>
-                <span style="opacity:0.45;">→</span>
-                <span style="opacity:0.45;">Wage_report_files</span>
-              </div>
-
+              <!-- Breadcrumbs removed from central panel -->
               <h2 style="margin-top:0">Hasan_Medical_Report.pdf</h2>
               <div class="grid">
                 <div>
@@ -307,20 +389,16 @@
                 </div>
                 <div>
                   <!-- Preview -->
-                  <div class="preview" style="padding:0;">
+                  <div class="preview" aria-label="Hasan Medical Report PDF">
                     <object
-                      data="{{ url_for('static', filename='docs/Hasan_Medical_Report.pdf') }}#toolbar=1&navpanes=0&scrollbar=1"
+                      data="{{ url_for('static', filename='docs/Hasan_Medical_Report.pdf') }}#toolbar=1&navpanes=0&scrollbar=1&zoom=page-width&view=FitH"
                       type="application/pdf"
-                      width="100%"
-                      height="100%"
-                      style="min-height:260px; border:0;"
+                      class="pdf-frame"
                     >
-                      <!-- Fallback if the browser can't render PDFs -->
+                      <!-- Fallback -->
                       <iframe
-                        src="{{ url_for('static', filename='docs/Hasan_Medical_Report.pdf') }}"
-                        width="100%"
-                        height="100%"
-                        style="min-height:260px; border:0;"
+                        src="{{ url_for('static', filename='docs/Hasan_Medical_Report.pdf') }}#zoom=page-width"
+                        class="pdf-frame"
                       ></iframe>
                     </object>
                   </div>
@@ -339,14 +417,6 @@
         <section id="file-2" class="section">
           <div class="card">
             <div class="panel">
-              <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-                <span style="opacity:0.45;">Medical_record_files</span>
-                <span style="opacity:0.45;">→</span>
-                <span style="font-weight:700; opacity:1;">ID_record_files</span>
-                <span style="opacity:0.45;">→</span>
-                <span style="opacity:0.45;">Wage_report_files</span>
-              </div>
-
               <h2 style="margin-top:0">Hasan_ID.pdf</h2>
               <div class="grid">
                 <div>
@@ -368,19 +438,15 @@
                   </div>
                 </div>
                 <div>
-                  <div class="preview" style="padding:0;">
+                  <div class="preview" aria-label="Hasan ID PDF">
                     <object
-                      data="{{ url_for('static', filename='docs/Hasan_ID.pdf') }}#toolbar=1&navpanes=0&scrollbar=1"
+                      data="{{ url_for('static', filename='docs/Hasan_ID.pdf') }}#toolbar=1&navpanes=0&scrollbar=1&zoom=page-width&view=FitH"
                       type="application/pdf"
-                      width="100%"
-                      height="100%"
-                      style="min-height:260px; border:0;"
+                      class="pdf-frame"
                     >
                       <iframe
-                        src="{{ url_for('static', filename='docs/Hasan_ID.pdf') }}"
-                        width="100%"
-                        height="100%"
-                        style="min-height:260px; border:0;"
+                        src="{{ url_for('static', filename='docs/Hasan_ID.pdf') }}#zoom=page-width"
+                        class="pdf-frame"
                       ></iframe>
                     </object>
                   </div>
@@ -400,14 +466,6 @@
         <section id="file-3" class="section">
           <div class="card">
             <div class="panel">
-              <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-                <span style="opacity:0.45;">Medical_record_files</span>
-                <span style="opacity:0.45;">→</span>
-                <span style="opacity:0.45;">ID_record_files</span>
-                <span style="opacity:0.45;">→</span>
-                <span style="font-weight:700; opacity:1;">Wage_report_files</span>
-              </div>
-
               <h2 style="margin-top:0">Wage_report_hasan.pdf</h2>
               <div class="grid">
                 <div>
@@ -425,19 +483,15 @@
                   </div>
                 </div>
                 <div>
-                  <div class="preview" style="padding:0;">
+                  <div class="preview" aria-label="Hasan Wage Report PDF">
                     <object
-                      data="{{ url_for('static', filename='docs/Wage_report_hasan.pdf') }}#toolbar=1&navpanes=0&scrollbar=1"
+                      data="{{ url_for('static', filename='docs/Wage_report_hasan.pdf') }}#toolbar=1&navpanes=0&scrollbar=1&zoom=page-width&view=FitH"
                       type="application/pdf"
-                      width="100%"
-                      height="100%"
-                      style="min-height:260px; border:0;"
+                      class="pdf-frame"
                     >
                       <iframe
-                        src="{{ url_for('static', filename='docs/Wage_report_hasan.pdf') }}"
-                        width="100%"
-                        height="100%"
-                        style="min-height:260px; border:0;"
+                        src="{{ url_for('static', filename='docs/Wage_report_hasan.pdf') }}#zoom=page-width"
+                        class="pdf-frame"
                       ></iframe>
                     </object>
                   </div>
@@ -447,9 +501,7 @@
             <div class="toolbar">
               <span style="flex:1"></span>
               <button class="btn" onclick="goPrev(3)">← Previous </button>
-              <!-- Changed: Save and Go Back -->
               <button class="btn primary" onclick="saveFileAndBack()">Save and Go Back</button>
-              <!-- No Next here -->
             </div>
           </div>
         </section>
@@ -481,12 +533,12 @@
       if (backClaims) backClaims.style.display = onList ? '' : 'none';
       if (backReview) backReview.style.display = onList ? 'none' : '';
 
-      // Sidebar active state
+      // Sidebar active state (highlight the file link)
       const map = {'file-1':1, 'file-2':2, 'file-3':3};
       const n = map[id];
-      document.querySelectorAll('#reviewSideNav .item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('#reviewSideNav .side-file').forEach(el => el.classList.remove('active'));
       if (n) {
-        const selector = `#reviewSideNav .item[data-target="file-${n}"]`;
+        const selector = `#reviewSideNav .side-file[data-target="file-${n}"]`;
         document.querySelectorAll(selector).forEach(el => el.classList.add('active'));
       }
     }
